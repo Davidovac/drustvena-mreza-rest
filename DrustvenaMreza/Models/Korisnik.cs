@@ -7,7 +7,6 @@
         public string Name { get; set; }
         public string Surname { get; set; }
         public DateTime DateOfBirth { get; set; }
-        public List<Grupa>? Grupe { get; set; }
 
         public Korisnik(int id, string username, string name, string surname, DateTime dateOfBirth)
         {

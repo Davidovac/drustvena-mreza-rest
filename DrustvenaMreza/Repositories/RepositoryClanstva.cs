@@ -1,11 +1,12 @@
-﻿using DrustvenaMreza.Models;
+﻿using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
+using DrustvenaMreza.Models;
 namespace DrustvenaMreza.Repositories
 {
     public class RepositoryClanstva
     {
         private const string filePath = "data/clanstva.csv";
-        public static Dictionary<int, int> Data;
-
+        public static Dictionary<int, Clanstvo> Data;
         public RepositoryClanstva()
         {
             if (Data == null)
@@ -16,9 +17,10 @@ namespace DrustvenaMreza.Repositories
 
         public void LoadData()
         {
+            Data = new Dictionary<int, Clanstvo>();
             Dictionary<int, Grupa> grupe = RepositoryGrupe.Data;
             Dictionary<int, Korisnik> korisnici = RepositoryKorisnici.Data;
-            Data = new Dictionary<int, int>();
+            List<Korisnik> korisniciList = new List<Korisnik>();
             if (!File.Exists(filePath))
             {
                 Console.WriteLine("File not found: " + filePath);
@@ -31,29 +33,31 @@ namespace DrustvenaMreza.Repositories
                 if (parts.Length != 2) continue; // Skip invalid lines
                 int userId = int.Parse(parts[0]);
                 int groupId = int.Parse(parts[1]);
-                if (grupe[groupId].Korisnici == null)
-                {
-                    grupe[groupId].Korisnici = new List<Korisnik>();
-                }
-                if (korisnici[userId].Grupe == null)
-                {
-                    korisnici[userId].Grupe = new List<Grupa>();
-                }
-                grupe[groupId].Korisnici.Add(korisnici[userId]);
-                korisnici[userId].Grupe.Add(grupe[groupId]);
-                Data.Add(userId, groupId);
+                Clanstvo clanstvo = new Clanstvo(SracunajId(), grupe[groupId], korisnici[userId]);
+                Data.Add(clanstvo.Id, clanstvo);
             }
         }
 
         public void SaveData()
         {
             List<string> lines = new List<string>();
+            foreach (var clanstvo in Data.Values)
             {
-                foreach (var entry in Data)
+                lines.Add($"{clanstvo.Korisnik.Id},{clanstvo.Grupa.Id}");
+            }
+        }
+
+        private int SracunajId()
+        {
+            int maxId = 0;
+            foreach (var key in RepositoryClanstva.Data.Keys)
+            {
+                if (key > maxId)
                 {
-                    lines.Add($"{entry.Key},{entry.Value}");
+                    maxId = key;
                 }
             }
+            return maxId + 1;
         }
     }
 }
