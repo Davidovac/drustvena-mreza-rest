@@ -45,6 +45,7 @@ namespace DrustvenaMreza.Repositories
             {
                 lines.Add($"{clanstvo.Korisnik.Id},{clanstvo.Grupa.Id}");
             }
+            File.WriteAllLines(filePath, lines);
         }
 
         private int SracunajId()

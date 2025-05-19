@@ -73,6 +73,18 @@ namespace DrustvenaMreza.Controllers
                 return NotFound();
             }
             RepositoryKorisnici.Data.Remove(id);
+            List<Clanstvo> clanstva = new List<Clanstvo>();
+            foreach (var c in RepositoryClanstva.Data.Values)
+            {
+                if (c.Korisnik.Id == id)
+                {
+                    clanstva.Add(c);
+                }
+            }
+            foreach (var clanstvo in clanstva)
+            {
+                RepositoryClanstva.Data.Remove(clanstvo.Id);
+            }
             repositoryKorisnici.SaveData();
             repositoryClanstva.SaveData();
             return NoContent();
