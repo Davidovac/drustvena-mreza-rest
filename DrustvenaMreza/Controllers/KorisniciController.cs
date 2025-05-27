@@ -60,9 +60,10 @@ namespace DrustvenaMreza.Controllers
             {
                 return NotFound();
             }
+            korisnik.Id = id;
             RepositoryKorisnici.Data[id] = korisnik;
             repositoryKorisnici.SaveData();
-            return Ok();
+            return Ok(korisnik);
         }
         // DELETE: api/korisnici/{id}
         [HttpDelete("{id}")]
