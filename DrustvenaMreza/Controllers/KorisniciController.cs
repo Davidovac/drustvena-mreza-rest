@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using System.Globalization;
 using DrustvenaMreza.Models;
 using DrustvenaMreza.Repositories;
-using System.Globalization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
 
 namespace DrustvenaMreza.Controllers
 {
@@ -17,7 +18,41 @@ namespace DrustvenaMreza.Controllers
         [HttpGet]
         public ActionResult<List<Korisnik>> GetAll()
         {
-            List<Korisnik> korisnici = RepositoryKorisnici.Data.Values.ToList();
+            List<Korisnik> korisnici = new List<Korisnik>();
+            try
+            {
+                using SqliteConnection connection = new SqliteConnection("Data Source=Data/data.db");
+                connection.Open();
+                string query = "SELECT * FROM Users";
+                using SqliteCommand command = new SqliteCommand(query, connection);
+                using SqliteDataReader reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    Korisnik k = new Korisnik(
+                        reader.GetInt32(0), // Id
+                        reader.GetString(1), // Username
+                        reader.GetString(2), // Name
+                        reader.GetString(3), // Surname
+                        DateTime.ParseExact(reader.GetString(4), "yyyy-MM-dd", CultureInfo.InvariantCulture)); // DateOfBirth
+                    korisnici.Add(k);
+                }
+            }
+            catch (SqliteException ex)
+            {
+                Console.WriteLine($"Greška pri konekciji ili izvršavanju neispravnih SQL upita: {ex.Message}");
+            }
+            catch (FormatException ex)
+            {
+                Console.WriteLine($"Greška u konverziji podataka iz baze: {ex.Message}");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"Konekcija nije otvorena ili je otvorena više puta: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Neočekivana greška: {ex.Message}");
+            }
             return Ok(korisnici);
         }
         // GET: api/korisnici/{id}
