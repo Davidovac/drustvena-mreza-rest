@@ -38,18 +38,12 @@ namespace DrustvenaMreza.Controllers
         [HttpPost]
         public ActionResult<Korisnik> CreateKorisnik([FromBody] Korisnik korisnik)
         {
-            if (RepositoryKorisnici.Data.ContainsKey(korisnik.Id))
-            {
-                return Conflict();
-            }
             if (string.IsNullOrWhiteSpace(korisnik.Name) || string.IsNullOrWhiteSpace(korisnik.Surname) || string.IsNullOrWhiteSpace(korisnik.Username))
             {
                 return BadRequest();
             }
-            korisnik.Id = SracunajId();
-            RepositoryKorisnici.Data.Add(korisnik.Id, korisnik);
-            repositoryKorisnici.SaveData();
-            return Ok(korisnik);
+            userDbRepository.Create(korisnik);
+            return Ok();
         }
         // PUT: api/korisnici/{id}
         [HttpPut("{id}")]
@@ -59,24 +53,23 @@ namespace DrustvenaMreza.Controllers
             {
                 return BadRequest();
             }
-            if (!RepositoryKorisnici.Data.ContainsKey(id))
+            if (userDbRepository.GetById(id) == null)
             {
                 return NotFound();
             }
             korisnik.Id = id;
-            RepositoryKorisnici.Data[id] = korisnik;
-            repositoryKorisnici.SaveData();
+            userDbRepository.Update(korisnik);
             return Ok(korisnik);
         }
         // DELETE: api/korisnici/{id}
         [HttpDelete("{id}")]
         public IActionResult DeleteKorisnik(int id)
         {
-            if (!RepositoryKorisnici.Data.ContainsKey(id))
+            if (userDbRepository.GetById(id) == null)
             {
                 return NotFound();
             }
-            RepositoryKorisnici.Data.Remove(id);
+            userDbRepository.Delete(id);
             List<Clanstvo> clanstva = new List<Clanstvo>();
             foreach (var c in RepositoryClanstva.Data.Values)
             {
@@ -89,7 +82,6 @@ namespace DrustvenaMreza.Controllers
             {
                 RepositoryClanstva.Data.Remove(clanstvo.Id);
             }
-            repositoryKorisnici.SaveData();
             repositoryClanstva.SaveData();
             return NoContent();
         }
