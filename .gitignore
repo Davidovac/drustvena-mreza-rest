@@ -222,6 +222,10 @@ UpgradeLog*.htm
 *.mdf
 *.ldf
 
+#SQLite
+DrustvenaMreza/Data/
+
+
 # Business Intelligence projects
 *.rdl.data
 *.bim.layout
