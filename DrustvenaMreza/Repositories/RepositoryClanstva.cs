@@ -1,12 +1,14 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using DrustvenaMreza.Models;
+using Microsoft.Extensions.Configuration;
 namespace DrustvenaMreza.Repositories
 {
     public class RepositoryClanstva
     {
         private const string filePath = "data/clanstva.csv";
         public static Dictionary<int, Clanstvo> Data;
+        private UserDbRepository userDbRepository;
         public RepositoryClanstva()
         {
             if (Data == null)
@@ -19,7 +21,7 @@ namespace DrustvenaMreza.Repositories
         {
             Data = new Dictionary<int, Clanstvo>();
             Dictionary<int, Grupa> grupe = RepositoryGrupe.Data;
-            Dictionary<int, Korisnik> korisnici = RepositoryKorisnici.Data;
+            Dictionary<int, Korisnik> korisnici = new Dictionary<int, Korisnik>();
             List<Korisnik> korisniciList = new List<Korisnik>();
             if (!File.Exists(filePath))
             {

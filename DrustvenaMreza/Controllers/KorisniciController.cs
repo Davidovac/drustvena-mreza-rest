@@ -11,17 +11,39 @@ namespace DrustvenaMreza.Controllers
     [ApiController]
     public class KorisniciController : ControllerBase
     {
-        private RepositoryKorisnici repositoryKorisnici = new RepositoryKorisnici();
-        private RepositoryGrupe repositoryGrupe = new RepositoryGrupe();
-        private RepositoryClanstva repositoryClanstva = new RepositoryClanstva();
-        private UserDbRepository userDbRepository = new UserDbRepository();
-        // GET: api/korisnici
-        [HttpGet]
-        public ActionResult<List<Korisnik>> GetAll()
+        //private RepositoryGrupe repositoryGrupe = new RepositoryGrupe();
+        //private RepositoryClanstva repositoryClanstva = new RepositoryClanstva();
+        private UserDbRepository userDbRepository;
+
+        public KorisniciController(IConfiguration configuration)
         {
-            List<Korisnik> korisnici = userDbRepository.GetAll();
-            
-            return Ok(korisnici);
+            userDbRepository = new UserDbRepository(configuration);
+        }
+
+        // GET /api/books?page={page}&pageSize={pageSize}
+        [HttpGet]
+        public ActionResult<List<Korisnik>> GetPaged([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            if (page < 1 || pageSize < 1)
+            {
+                return BadRequest("Page and pageSize must be greater than zero.");
+            }
+            try
+            {
+                List<Korisnik> korisnici = userDbRepository.GetPaged(page, pageSize);
+                int totalCount = userDbRepository.CountAll();
+                Object result = new
+                {
+                    TotalCount = totalCount,
+                    Data = korisnici
+                };
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return Problem("An error occurred while retrieving users.");
+            }
+
         }
         // GET: api/korisnici/{id}
         [HttpGet("{id}")]
@@ -42,61 +64,64 @@ namespace DrustvenaMreza.Controllers
             {
                 return BadRequest();
             }
-            userDbRepository.Create(korisnik);
-            return Ok();
+            Korisnik newKorisnik = userDbRepository.Create(korisnik);
+            return Ok(newKorisnik);
         }
         // PUT: api/korisnici/{id}
         [HttpPut("{id}")]
         public ActionResult<Korisnik> UpdateKorisnik(int id, [FromBody] Korisnik korisnik)
         {
-            if (string.IsNullOrWhiteSpace(korisnik.Name) || string.IsNullOrWhiteSpace(korisnik.Surname) || string.IsNullOrWhiteSpace(korisnik.Username))
+            if (korisnik == null || string.IsNullOrWhiteSpace(korisnik.Name) || string.IsNullOrWhiteSpace(korisnik.Surname) || string.IsNullOrWhiteSpace(korisnik.Username))
             {
                 return BadRequest();
             }
-            if (userDbRepository.GetById(id) == null)
+            try
             {
-                return NotFound();
+                korisnik.Id = id;
+                Korisnik updatedKorisnik = userDbRepository.Update(korisnik);
+                if (updatedKorisnik == null)
+                {
+                    return NotFound();
+                }
+                return Ok(updatedKorisnik);
             }
-            korisnik.Id = id;
-            userDbRepository.Update(korisnik);
-            return Ok(korisnik);
+            catch (Exception ex)
+            {
+                return Problem("An error occurred while updating the book.");
+            }
+            
         }
         // DELETE: api/korisnici/{id}
         [HttpDelete("{id}")]
         public IActionResult DeleteKorisnik(int id)
         {
-            if (userDbRepository.GetById(id) == null)
+            try
             {
-                return NotFound();
-            }
-            userDbRepository.Delete(id);
-            List<Clanstvo> clanstva = new List<Clanstvo>();
-            foreach (var c in RepositoryClanstva.Data.Values)
-            {
-                if (c.Korisnik.Id == id)
+                bool isDeleted = userDbRepository.Delete(id);
+                if (isDeleted)
                 {
-                    clanstva.Add(c);
-                }
-            }
-            foreach (var clanstvo in clanstva)
-            {
-                RepositoryClanstva.Data.Remove(clanstvo.Id);
-            }
-            repositoryClanstva.SaveData();
-            return NoContent();
-        }
+                    /*List<Clanstvo> clanstva = new List<Clanstvo>();
+                    foreach (var c in RepositoryClanstva.Data.Values)
+                    {
+                        if (c.Korisnik.Id == id)
+                        {
+                            clanstva.Add(c);
+                        }
+                    }
+                    foreach (var clanstvo in clanstva)
+                    {
+                        RepositoryClanstva.Data.Remove(clanstvo.Id);
+                    }
+                    repositoryClanstva.SaveData();*/
 
-        private int SracunajId()
-        {
-            int maxId = 0;
-            foreach (var korisnik in RepositoryKorisnici.Data.Values)
-            {
-                if (korisnik.Id > maxId)
-                {
-                    maxId = korisnik.Id;
+                    return NoContent();
                 }
+                return NotFound($"User with ID {id} not found.");
             }
-            return maxId + 1;
+            catch (Exception ex)
+            {
+                return Problem("An error occurred while deleting the user.");
+            }
         }
     }
 }

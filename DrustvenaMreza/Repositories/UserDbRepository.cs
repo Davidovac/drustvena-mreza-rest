@@ -6,16 +6,26 @@ namespace DrustvenaMreza.Repositories
 {
     public class UserDbRepository
     {
-        private const string connectionString = "Data Source=Data/data.db";
-        public List<Korisnik> GetAll()
+        private readonly string connectionString;
+
+        public UserDbRepository(IConfiguration configuration)
+        {
+            connectionString = configuration["ConnectionString:SQLiteConnection"];
+        }
+
+        public List<Korisnik> GetPaged(int page, int pageSize)
         {
             List<Korisnik> korisnici = new List<Korisnik>();
             try
             {
                 using SqliteConnection connection = new SqliteConnection(connectionString);
                 connection.Open();
-                string query = "SELECT * FROM Users";
+
+                string query = "SELECT * FROM Users LIMIT @PageSize OFFSET @Offset";
+
                 using SqliteCommand command = new SqliteCommand(query, connection);
+                command.Parameters.AddWithValue("@PageSize", pageSize);
+                command.Parameters.AddWithValue("@Offset", (page - 1) * pageSize);
                 using SqliteDataReader reader = command.ExecuteReader();
                 while (reader.Read())
                 {
@@ -94,19 +104,23 @@ namespace DrustvenaMreza.Repositories
             return null;
         }
 
-        public void Create(Korisnik korisnik)
+        public Korisnik Create(Korisnik korisnik)
         {
             try
             {
                 using SqliteConnection connection = new SqliteConnection(connectionString);
                 connection.Open();
-                string query = "INSERT INTO Users (Username, Name, Surname, Birthday) VALUES (@username, @name, @surname, @birthday)";
+
+                string query = "INSERT INTO Users (Username, Name, Surname, Birthday) VALUES (@username, @name, @surname, @birthday); SELECT LAST_INSERT_ROWID();";
+
                 using SqliteCommand command = new SqliteCommand(query, connection);
                 command.Parameters.AddWithValue("@username", korisnik.Username);
                 command.Parameters.AddWithValue("@name", korisnik.Name);
                 command.Parameters.AddWithValue("@surname", korisnik.Surname);
                 command.Parameters.AddWithValue("@birthday", korisnik.DateOfBirth.ToString("yyyy-MM-dd"));
-                command.ExecuteNonQuery();
+
+                korisnik.Id = Convert.ToInt32(command.ExecuteScalar());
+                return korisnik;
             }
             catch (SqliteException ex)
             {
@@ -130,20 +144,24 @@ namespace DrustvenaMreza.Repositories
             }
         }
 
-        public void Update(Korisnik korisnik)
+        public Korisnik Update(Korisnik korisnik)
         {
             try
             {
                 using SqliteConnection connection = new SqliteConnection(connectionString);
                 connection.Open();
+
                 string query = "UPDATE Users SET Username = @username, Name = @name, Surname = @surname, Birthday = @birthday WHERE Id = @id";
+
                 using SqliteCommand command = new SqliteCommand(query, connection);
                 command.Parameters.AddWithValue("@id", korisnik.Id);
                 command.Parameters.AddWithValue("@username", korisnik.Username);
                 command.Parameters.AddWithValue("@name", korisnik.Name);
                 command.Parameters.AddWithValue("@surname", korisnik.Surname);
                 command.Parameters.AddWithValue("@birthday", korisnik.DateOfBirth.ToString("yyyy-MM-dd"));
-                command.ExecuteNonQuery();
+
+                int affectedRows = command.ExecuteNonQuery();
+                return affectedRows > 0 ? korisnik : null;
             }
             catch (SqliteException ex)
             {
@@ -167,20 +185,57 @@ namespace DrustvenaMreza.Repositories
             }
         }
 
-        public void Delete(int id)
+        public bool Delete(int id)
         {
             try
             {
                 using SqliteConnection connection = new SqliteConnection(connectionString);
                 connection.Open();
+
                 string query = "DELETE FROM Users WHERE Id = @id";
+
                 using SqliteCommand command = new SqliteCommand(query, connection);
                 command.Parameters.AddWithValue("@id", id);
-                command.ExecuteNonQuery();
+
+                int affectedRows = command.ExecuteNonQuery();
+                return affectedRows > 0;
             }
             catch (SqliteException ex)
             {
                 Console.WriteLine($"Greška pri konekciji ili izvršavanju neispravnih SQL upita: {ex.Message}");
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"Konekcija nije otvorena ili je otvorena više puta: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Neočekivana greška: {ex.Message}");
+                throw;
+            }
+        }
+
+        public int CountAll()
+        {
+            try
+            {
+                using SqliteConnection connection = new SqliteConnection(connectionString);
+                connection.Open();
+                string query = "SELECT COUNT(*) FROM Users";
+                using SqliteCommand command = new SqliteCommand(query, connection);
+                int totalCount = Convert.ToInt32(command.ExecuteScalar());
+                return totalCount;
+            }
+            catch (SqliteException ex)
+            {
+                Console.WriteLine($"Greška pri konekciji ili izvršavanju neispravnih SQL upita: {ex.Message}");
+                throw;
+            }
+            catch (FormatException ex)
+            {
+                Console.WriteLine($"Greška u konverziji podataka iz baze: {ex.Message}");
                 throw;
             }
             catch (InvalidOperationException ex)
