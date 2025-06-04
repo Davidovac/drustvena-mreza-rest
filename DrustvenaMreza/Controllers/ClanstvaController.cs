@@ -9,27 +9,47 @@ namespace DrustvenaMreza.Controllers
     [ApiController]
     public class ClanstvaController : ControllerBase
     {
-        private RepositoryGrupe repositoryGrupe = new RepositoryGrupe();
-        private RepositoryKorisnici repositoryKorisnici = new RepositoryKorisnici();
-        private RepositoryClanstva repositoryClanstva = new RepositoryClanstva();
+        private UserDbRepository userDbRepository;
+        private GroupDbRepository groupDbRepository;
+        private GroupMembershipDbRepository groupMembershipDbRepository;
 
-        // GET: api/clanstva/{id}
-        [HttpGet]
-        public ActionResult<string> GetAllUsersByGroup([FromQuery] int groupId)
+        public ClanstvaController(IConfiguration configuration)
         {
-            if (!RepositoryGrupe.Data.ContainsKey(groupId))
+            userDbRepository = new UserDbRepository(configuration);
+            groupDbRepository = new GroupDbRepository(configuration);
+            groupMembershipDbRepository = new GroupMembershipDbRepository(configuration);
+        }
+
+        // GET: api/clanstva/{id}?page={page}&pageSize={pageSize}
+        [HttpGet]
+        public ActionResult<string> GetGroupWithUsers([FromQuery] int groupId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            if (page < 1 || pageSize < 1)
             {
-                return NotFound();
+                return BadRequest("Page and pageSize must be greater than zero.");
             }
             List<Korisnik> korisnici = new List<Korisnik>();
-            foreach (var clanstvo in RepositoryClanstva.Data.Values)
+            try
             {
-                if (clanstvo.Grupa.Id == groupId)
+                Grupa? group = groupDbRepository.GetById(groupId);
+                if (group == null)
                 {
-                    korisnici.Add(clanstvo.Korisnik);
+                    return NotFound("Group not found.");
                 }
+                korisnici = groupMembershipDbRepository.GetAllUsersByGroup(groupId, page, pageSize);
+                Object obj = new
+                {
+                    korisnici,
+                    group,
+                    page,
+                    pageSize
+                };
+                return Ok(obj);
             }
-            return Ok(korisnici);
+            catch (Exception ex)
+            {
+                return Problem("An error occurred while retrieving users by group.");
+            }   
         }
     }
 }

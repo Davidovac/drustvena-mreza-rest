@@ -3,14 +3,13 @@
     public class Clanstvo
     {
         public int Id { get; set; }
-        public Grupa Grupa { get; set; }
-        public Korisnik Korisnik { get; set; }
-        public Clanstvo(int id, Grupa grupa, Korisnik korisnik)
+        public int GrupaID { get; set; }
+        public int KorisnikID { get; set; }
+        public Clanstvo(int id, int GrupaID, int KorisnikID)
         {
             Id = id;
-            Grupa = grupa;
-            Korisnik = korisnik;
+            GrupaID = GrupaID;
+            KorisnikID = KorisnikID;
         }
-        
     }
 }

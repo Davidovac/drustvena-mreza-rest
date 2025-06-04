@@ -6,7 +6,7 @@ namespace DrustvenaMreza.Repositories
 {
     public class RepositoryClanstva
     {
-        private const string filePath = "data/clanstva.csv";
+        /*private const string filePath = "data/clanstva.csv";
         public static Dictionary<int, Clanstvo> Data;
         private UserDbRepository userDbRepository;
         public RepositoryClanstva()
@@ -61,6 +61,6 @@ namespace DrustvenaMreza.Repositories
                 }
             }
             return maxId + 1;
-        }
+        }*/
     }
 }
