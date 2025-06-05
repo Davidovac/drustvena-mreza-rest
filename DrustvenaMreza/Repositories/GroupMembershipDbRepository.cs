@@ -91,6 +91,35 @@ namespace DrustvenaMreza.Repositories
             }
         }
 
-        
+        public bool RemoveUserFromGroup(int groupId, int userId)
+        {
+            try
+            {
+                using SqliteConnection connection = new SqliteConnection(connectionString);
+                connection.Open();
+                string query = "DELETE FROM GroupMemberships WHERE UserId = @UserId AND GroupId = @GroupId";
+                using SqliteCommand command = new SqliteCommand(query, connection);
+                command.Parameters.AddWithValue("@UserId", userId);
+                command.Parameters.AddWithValue("@GroupId", groupId);
+                int affectedRows = command.ExecuteNonQuery();
+                return affectedRows > 0;
+
+            }
+            catch (SqliteException ex)
+            {
+                Console.WriteLine($"Greška pri konekciji ili izvršavanju neispravnih SQL upita: {ex.Message}");
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"Konekcija nije otvorena ili je otvorena više puta: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Neočekivana greška: {ex.Message}");
+                throw;
+            }
+        }
     }
 }

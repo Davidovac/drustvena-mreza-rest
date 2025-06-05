@@ -78,6 +78,38 @@ namespace DrustvenaMreza.Controllers
             }
         }
 
-        
+        // DELETE: api/clanstva/{groupId}/{userId}
+        [HttpDelete("{groupId}/{userId}")]
+        public ActionResult<string> RemoveUserFromGroup(int groupId, int userId)
+        {
+            try
+            {
+                Grupa? group = groupDbRepository.GetById(groupId);
+                if (group == null)
+                {
+                    return NotFound("Group not found.");
+                }
+                Korisnik? user = userDbRepository.GetById(userId);
+                if (user == null)
+                {
+                    return NotFound("User not found.");
+                }
+
+                bool isDeleted = false;
+                isDeleted = groupMembershipDbRepository.RemoveUserFromGroup(groupId, userId);
+                if (isDeleted)
+                {
+                    return Ok($"User {user.Username} removed from group {group.Name} successfully.");
+                }
+                else
+                {
+                    return NotFound("User is not a member of the group.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return Problem("An error occurred while removing user from group.");
+            }
+        }
     }
 }
