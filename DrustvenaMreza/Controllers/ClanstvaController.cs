@@ -49,7 +49,35 @@ namespace DrustvenaMreza.Controllers
             catch (Exception ex)
             {
                 return Problem("An error occurred while retrieving users by group.");
-            }   
+            }
         }
+
+        // POST : api/clanstva/{groupId}/{userId}
+        [HttpPost("{groupId}/{userId}")]
+        public ActionResult<string> AddUserToGroup(int groupId, int userId)
+        {
+            try
+            {
+                Grupa? group = groupDbRepository.GetById(groupId);
+                if (group == null)
+                {
+                    return NotFound("Group not found.");
+                }
+                Korisnik? user = userDbRepository.GetById(userId);
+                if (user == null)
+                {
+                    return NotFound("User not found.");
+                }
+
+                groupMembershipDbRepository.AddUserToGroup(groupId, userId);
+                return Ok($"User {user.Username} added to group {group.Name} successfully.");
+            }
+            catch (Exception ex)
+            {
+                return Problem("An error occurred while adding user to group.");
+            }
+        }
+
+        
     }
 }
