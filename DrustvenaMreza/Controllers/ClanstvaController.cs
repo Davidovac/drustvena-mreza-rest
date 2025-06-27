@@ -99,7 +99,7 @@ namespace DrustvenaMreza.Controllers
                 isDeleted = groupMembershipDbRepository.RemoveUserFromGroup(groupId, userId);
                 if (isDeleted)
                 {
-                    return Ok($"User {user.Username} removed from group {group.Name} successfully.");
+                    return NoContent();
                 }
                 else
                 {
